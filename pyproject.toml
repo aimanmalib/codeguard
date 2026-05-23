@@ -1,0 +1,56 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mimo-codeguard"
+version = "1.0.0"
+description = "7-Agent Code Review Automation powered by Xiaomi MiMo V2.5 Pro"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [{name = "CodeGuard Team"}]
+keywords = ["code-review", "ai", "agents", "mimo", "automation", "security"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Quality Assurance",
+]
+
+dependencies = [
+    "httpx>=0.25.0",
+    "pydantic>=2.0.0",
+    "rich>=13.0.0",
+    "click>=8.1.0",
+    "pyyaml>=6.0",
+    "gitpython>=3.1.0",
+    "tiktoken>=0.5.0",
+    "radon>=6.0.0",
+    "bandit>=1.7.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "ruff>=0.1.0",
+]
+
+[project.scripts]
+codeguard = "codeguard.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = ["unit", "integration", "slow"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
