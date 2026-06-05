@@ -1,6 +1,8 @@
 """
-MiMo CodeGuard — 7-Agent Code Review Automation
-Powered by Xiaomi MiMo V2.5 Pro via Token Plan API.
+CodeGuard — 7-Agent Code Review Automation.
+
+Provider-agnostic: runs on any OpenAI-compatible /chat/completions endpoint
+(OpenAI, OpenRouter, Ollama, llama.cpp, Xiaomi MiMo, ...).
 
 Usage:
     codeguard review --diff changes.patch

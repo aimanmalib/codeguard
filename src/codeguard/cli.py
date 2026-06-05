@@ -25,9 +25,10 @@ console = Console()
 @click.option("--verbose", "-v", is_flag=True)
 @click.pass_context
 def main(ctx, config, verbose):
-    """MiMo CodeGuard - 7-Agent Code Review Automation.
+    """CodeGuard - 7-Agent Code Review Automation.
 
-    Powered by Xiaomi MiMo V2.5 Pro via Token Plan API.
+    Provider-agnostic: runs on any OpenAI-compatible LLM endpoint
+    (OpenAI, OpenRouter, Ollama, MiMo, ...).
     """
     import logging
     logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
@@ -63,7 +64,7 @@ def review(ctx, path, language, fmt, output):
         sys.exit(1)
 
     console.print(Panel(
-        f"[bold cyan]MiMo CodeGuard v{__version__}[/]\n"
+        f"[bold cyan]CodeGuard v{__version__}[/]\n"
         f"Target: {path} | Language: {language or 'auto'} | Format: {fmt}",
         title="Review Configuration",
     ))

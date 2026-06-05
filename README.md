@@ -1,13 +1,15 @@
-# MiMo CodeGuard
+# CodeGuard
 
-> **7-Agent Code Review Automation powered by Xiaomi MiMo V2.5 Pro**
+> **7-Agent Code Review Automation for any OpenAI-compatible LLM**
 >
 > Parallel security, style, complexity, logic, testing, and documentation analysis with AI-powered summary and actionable recommendations.
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/)
-[![Tests: 42](https://img.shields.io/badge/tests-42-brightgreen.svg)](tests/)
-[![LOC: 2,800+](https://img.shields.io/badge/LOC-2%2C800%2B-orange.svg)](src/)
-[![MiMo V2.5 Pro](https://img.shields.io/badge/MiMo-V2.5%20Pro-orange.svg)](https://platform.xiaomimimo.com)
+[![CI](https://github.com/aimanmalib/codeguard/actions/workflows/ci.yml/badge.svg)](https://github.com/aimanmalib/codeguard/actions/workflows/ci.yml)
+[![Tests: 44](https://img.shields.io/badge/tests-44-brightgreen.svg)](tests/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+
+Works with **OpenAI, OpenRouter, Ollama, llama.cpp, Xiaomi MiMo**, or any endpoint that speaks the OpenAI `/chat/completions` protocol. Pick a provider with one config line — no code changes.
 
 ---
 
@@ -15,8 +17,8 @@
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│                    MiMo CodeGuard Pipeline                     │
-│               Powered by Xiaomi MiMo V2.5 Pro                 │
+│                    CodeGuard Pipeline                         │
+│              Any OpenAI-compatible LLM backend                │
 ├────────────────────────────────────────────────────────────────┤
 │                                                                │
 │  Phase 1: PARALLEL REVIEW (6 agents)                          │
@@ -43,8 +45,8 @@
 │  │     Token Tracker & Report      │                          │
 │  └─────────────────────────────────┘                          │
 │                                                                │
-│  API: token-plan-sgp.xiaomimimo.com/v1/chat/completions       │
-│  Auth: api-key header · Model: mimo-v2.5-pro                  │
+│  Protocol: OpenAI-compatible /chat/completions                │
+│  Auth: bearer token or api-key header (per provider)          │
 │  Phase 1 runs 6 agents concurrently (asyncio.gather)          │
 └────────────────────────────────────────────────────────────────┘
 ```
@@ -61,18 +63,26 @@
 | 6 | **Documentation** | Docstrings, type hints, TODO comments | Suggested docs |
 | 7 | **Summary** | Aggregate, deduplicate, prioritize | APPROVE/CHANGES/COMMENT |
 
-## Why MiMo V2.5 Pro?
+## Supported Providers
 
-1. **Low temperature reasoning** — Code review at temp=0.3 benefits from MiMo's deterministic `reasoning_content` for consistent severity classification
-2. **Parallel agent efficiency** — 6 concurrent API calls via asyncio with MiMo's 100 RPM / 10M TPM rate limits
-3. **Structured JSON output** — MiMo produces valid JSON for findings without schema enforcement
-4. **Cost efficiency** — Token Plan pricing makes per-PR review viable (~$0.01/review at ~5K tokens)
+CodeGuard talks to any OpenAI-compatible `/chat/completions` endpoint. Built-in presets:
+
+| Provider | `provider=` | Default model | Auth | Env vars |
+|----------|-------------|---------------|------|----------|
+| OpenAI | `openai` | `gpt-4o-mini` | Bearer | `OPENAI_API_KEY`, `OPENAI_BASE_URL` |
+| OpenRouter | `openrouter` | `openai/gpt-4o-mini` | Bearer | `OPENROUTER_API_KEY` |
+| Ollama (local) | `ollama` | `llama3.1` | Bearer | `OLLAMA_BASE_URL` |
+| Xiaomi MiMo | `mimo` | `mimo-v2.5-pro` | api-key | `MIMO_API_KEY` |
+
+Point `base_url` at any other compatible endpoint (llama.cpp, vLLM, LM Studio, a local proxy) and it just works. Code review runs at a low default temperature (0.3) for consistent severity classification regardless of provider.
 
 ## Quick Start
 
 ```bash
 pip install -e ".[dev]"
-export MIMO_API_KEY="your-key"
+
+# Pick any provider — set its API key (OpenAI shown here)
+export OPENAI_API_KEY="sk-your-key-here"
 
 # Review a file
 codeguard review --path ./src/main.py
@@ -82,6 +92,23 @@ codeguard review --path ./src --format json --output report.json
 
 # List agents
 codeguard agents
+```
+
+## Configuration
+
+```yaml
+# codeguard.yaml
+llm:
+  provider: openai          # openai | openrouter | ollama | mimo
+  api_key: ${OPENAI_API_KEY}
+  # base_url and model default from the provider preset; override if needed
+  temperature: 0.3          # low for code-review accuracy
+  max_retries: 3
+
+review:
+  severity_threshold: warning
+  include_security: true
+  include_style: true
 ```
 
 ## Token Consumption
@@ -96,7 +123,7 @@ Daily estimate (50 PRs): ~190K tokens/day
 ## Project Structure
 
 ```
-mimo-codeguard/
+codeguard/
 ├── src/codeguard/
 │   ├── __init__.py
 │   ├── cli.py
@@ -111,8 +138,9 @@ mimo-codeguard/
 │   │   ├── documentation.py      # Agent 6
 │   │   └── summary.py            # Agent 7
 │   ├── core/
-│   │   ├── config.py
-│   │   ├── mimo_client.py
+│   │   ├── config.py             # multi-provider presets
+│   │   ├── llm_client.py         # OpenAI-compatible client
+│   │   ├── mimo_client.py        # backward-compat shim → llm_client
 │   │   └── token_tracker.py
 │   └── pipeline/
 │       └── orchestrator.py
@@ -133,5 +161,4 @@ MIT License
 
 ---
 
-**Built with Xiaomi MiMo V2.5 Pro** via Token Plan API
-`token-plan-sgp.xiaomimimo.com/v1`
+**Provider-agnostic** — works with OpenAI, OpenRouter, Ollama, llama.cpp, Xiaomi MiMo, or any OpenAI-compatible `/chat/completions` endpoint.
