@@ -5,12 +5,12 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mimo-codeguard"
 version = "1.0.0"
-description = "7-Agent Code Review Automation powered by Xiaomi MiMo V2.5 Pro"
+description = "7-Agent Code Review Automation for any OpenAI-compatible LLM (OpenAI, OpenRouter, Ollama, MiMo)"
 readme = "README.md"
 license = {text = "MIT"}
 requires-python = ">=3.10"
 authors = [{name = "CodeGuard Team"}]
-keywords = ["code-review", "ai", "agents", "mimo", "automation", "security"]
+keywords = ["code-review", "ai", "agents", "llm", "openai", "automation", "security"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",

@@ -68,14 +68,13 @@ class BaseAgent(ABC):
             latency = (time.monotonic() - start) * 1000
             self.tracker.record(self.name, response.usage.total_tokens, latency)
             return response
-        except Exception as e:
+        except Exception:
             latency = (time.monotonic() - start) * 1000
             self.tracker.record(self.name, 0, latency, errors=1)
             raise
 
     @abstractmethod
-    async def execute(self, code: str, language: str = "", context: str = "") -> AgentResult:
-        ...
+    async def execute(self, code: str, language: str = "", context: str = "") -> AgentResult: ...
 
     async def run(self, code: str, language: str = "", context: str = "") -> AgentResult:
         try:

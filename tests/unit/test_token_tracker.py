@@ -1,6 +1,5 @@
 """Unit tests for token tracking."""
 
-import pytest
 from codeguard.core.token_tracker import TokenTracker, AgentMetrics
 
 
@@ -22,6 +21,7 @@ class TestTokenTracker:
 
     def test_duration(self):
         import time
+
         t = TokenTracker()
         t.start()
         time.sleep(0.01)

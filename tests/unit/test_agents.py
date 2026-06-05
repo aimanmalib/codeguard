@@ -11,7 +11,9 @@ from codeguard.core.mimo_client import ChatResponse, TokenUsage
 def make_response(content='{"findings": []}', tokens=500):
     return ChatResponse(
         content=content,
-        usage=TokenUsage(prompt_tokens=tokens//2, completion_tokens=tokens//2, total_tokens=tokens),
+        usage=TokenUsage(
+            prompt_tokens=tokens // 2, completion_tokens=tokens // 2, total_tokens=tokens
+        ),
         model="mimo-v2.5-pro",
         latency_ms=100,
     )
@@ -22,12 +24,21 @@ class TestAgentRegistry:
         assert len(AGENT_REGISTRY) == 7
 
     def test_expected_agents(self):
-        expected = {"security", "style", "complexity", "logic", "testing", "documentation", "summary"}
+        expected = {
+            "security",
+            "style",
+            "complexity",
+            "logic",
+            "testing",
+            "documentation",
+            "summary",
+        }
         assert set(AGENT_REGISTRY.keys()) == expected
 
     def test_get_valid(self, config):
         from codeguard.core.mimo_client import MiMoClient
         from codeguard.core.token_tracker import TokenTracker
+
         client = AsyncMock(spec=MiMoClient)
         tracker = TokenTracker()
         for name in AGENT_REGISTRY:
@@ -36,8 +47,8 @@ class TestAgentRegistry:
             assert isinstance(agent, BaseAgent)
 
     def test_get_invalid(self, config):
-        from codeguard.core.mimo_client import MiMoClient
         from codeguard.core.token_tracker import TokenTracker
+
         with pytest.raises(ValueError):
             get_agent("nonexistent", config=config, client=AsyncMock(), tracker=TokenTracker())
 
@@ -49,10 +60,15 @@ class TestAgentResult:
         assert r.finding_count == 0
 
     def test_severity_counts(self):
-        r = AgentResult(agent_name="test", findings=[
-            {"severity": "critical"}, {"severity": "error"},
-            {"severity": "warning"}, {"severity": "warning"},
-        ])
+        r = AgentResult(
+            agent_name="test",
+            findings=[
+                {"severity": "critical"},
+                {"severity": "error"},
+                {"severity": "warning"},
+                {"severity": "warning"},
+            ],
+        )
         assert r.critical_count == 1
         assert r.error_count == 1
         assert r.warning_count == 2
@@ -64,6 +80,7 @@ class TestIndividualAgents:
     def agent_setup(self, config):
         from codeguard.core.mimo_client import MiMoClient
         from codeguard.core.token_tracker import TokenTracker
+
         client = AsyncMock(spec=MiMoClient)
         tracker = TokenTracker()
         return config, client, tracker
@@ -120,9 +137,9 @@ class TestIndividualAgents:
     @pytest.mark.asyncio
     async def test_summary_agent(self, agent_setup):
         config, client, tracker = agent_setup
-        client.chat = AsyncMock(return_value=make_response(
-            '{"decision": "APPROVE", "quality_score": 85}'
-        ))
+        client.chat = AsyncMock(
+            return_value=make_response('{"decision": "APPROVE", "quality_score": 85}')
+        )
         agent = get_agent("summary", config=config, client=client, tracker=tracker)
         result = await agent.execute(code="code", context="all findings here")
         assert result.ok
