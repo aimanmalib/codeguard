@@ -16,7 +16,7 @@ state management bugs, race conditions, resource leaks.
 Output JSON with: file, line, severity, category, edge_case, fix."""
 
     async def execute(self, code: str, language: str = "", context: str = "") -> AgentResult:
-        prompt = f"""Review the following {language or 'code'} for logical errors and edge cases.
+        prompt = f"""Review the following {language or "code"} for logical errors and edge cases.
 
 {f"Context: {context}" if context else ""}
 
@@ -29,7 +29,9 @@ Return findings as JSON."""
 
         response = await self._call_mimo(prompt, self.SYSTEM)
         return AgentResult(
-            agent_name=self.name, summary=response.content,
-            tokens_used=response.usage.total_tokens, latency_ms=response.latency_ms,
+            agent_name=self.name,
+            summary=response.content,
+            tokens_used=response.usage.total_tokens,
+            latency_ms=response.latency_ms,
             reasoning=response.reasoning_content,
         )

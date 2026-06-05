@@ -106,6 +106,7 @@ class MiMoConfig(LLMConfig):
 
 class ReviewConfig(BaseModel):
     """Review pipeline settings."""
+
     severity_threshold: str = "warning"  # info | warning | error | critical
     max_suggestions: int = 20
     include_security: bool = True
@@ -119,6 +120,7 @@ class ReviewConfig(BaseModel):
 
 class CodeGuardConfig(BaseModel):
     """Root configuration."""
+
     llm: LLMConfig = Field(default_factory=LLMConfig)
     review: ReviewConfig = Field(default_factory=ReviewConfig)
     output_format: str = "text"  # text | json | markdown | github-comment

@@ -69,7 +69,9 @@ class TokenTracker:
             "",
         ]
         for name, m in sorted(self._agents.items(), key=lambda x: -x[1].total_tokens):
-            lines.append(f"  {name:<18} {m.call_count:>4} calls  {m.total_tokens:>8,} tok  {m.avg_latency_ms:>6.0f}ms")
+            lines.append(
+                f"  {name:<18} {m.call_count:>4} calls  {m.total_tokens:>8,} tok  {m.avg_latency_ms:>6.0f}ms"
+            )
         lines.append("=" * 50)
         return "\n".join(lines)
 
@@ -81,7 +83,11 @@ class TokenTracker:
             "duration_s": round(self.duration_s, 2),
             "total_tokens": self.total_tokens,
             "agents": {
-                name: {"calls": m.call_count, "tokens": m.total_tokens, "avg_latency_ms": round(m.avg_latency_ms, 1)}
+                name: {
+                    "calls": m.call_count,
+                    "tokens": m.total_tokens,
+                    "avg_latency_ms": round(m.avg_latency_ms, 1),
+                }
                 for name, m in self._agents.items()
             },
         }

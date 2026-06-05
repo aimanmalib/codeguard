@@ -1,6 +1,5 @@
 """Unit tests for CodeGuard configuration."""
 
-import pytest
 from codeguard.core.config import CodeGuardConfig, MiMoConfig, ReviewConfig
 
 

@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional
 
-from ..agents import AGENT_REGISTRY, get_agent
+from ..agents import get_agent
 from ..agents.base import AgentResult
 from ..core.config import CodeGuardConfig
 from ..core.mimo_client import MiMoClient
@@ -60,7 +60,9 @@ class CodeGuardOrchestrator:
 
                 tasks = []
                 for agent_name in self.REVIEW_AGENTS:
-                    agent = get_agent(agent_name, config=self.config, client=client, tracker=self.tracker)
+                    agent = get_agent(
+                        agent_name, config=self.config, client=client, tracker=self.tracker
+                    )
                     tasks.append(agent.run(code=code, language=language))
 
                 results = await asyncio.gather(*tasks, return_exceptions=True)
@@ -81,7 +83,9 @@ class CodeGuardOrchestrator:
                     if r.ok:
                         findings_context += f"\n=== {name.upper()} ===\n{r.summary}\n"
 
-                summary_agent = get_agent("summary", config=self.config, client=client, tracker=self.tracker)
+                summary_agent = get_agent(
+                    "summary", config=self.config, client=client, tracker=self.tracker
+                )
                 result.summary_result = await summary_agent.run(code=code, context=findings_context)
 
             except Exception as e:

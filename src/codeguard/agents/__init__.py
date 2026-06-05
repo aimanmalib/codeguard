@@ -19,14 +19,24 @@ AGENT_REGISTRY: dict[str, type[BaseAgent]] = {
     "summary": SummaryAgent,
 }
 
+
 def get_agent(name: str, **kwargs) -> BaseAgent:
     cls = AGENT_REGISTRY.get(name)
     if not cls:
         raise ValueError(f"Unknown agent: {name}. Available: {list(AGENT_REGISTRY)}")
     return cls(**kwargs)
 
+
 __all__ = [
-    "BaseAgent", "AgentResult", "AGENT_REGISTRY", "get_agent",
-    "SecurityAgent", "StyleAgent", "ComplexityAgent", "LogicAgent",
-    "TestingAgent", "DocumentationAgent", "SummaryAgent",
+    "BaseAgent",
+    "AgentResult",
+    "AGENT_REGISTRY",
+    "get_agent",
+    "SecurityAgent",
+    "StyleAgent",
+    "ComplexityAgent",
+    "LogicAgent",
+    "TestingAgent",
+    "DocumentationAgent",
+    "SummaryAgent",
 ]
