@@ -15,7 +15,16 @@ from codeguard.core.config import (
 
 class TestProviderPresets:
     def test_known_providers_present(self):
-        for provider in ("mimo", "openai", "openrouter", "ollama"):
+        for provider in (
+            "mimo",
+            "openai",
+            "openrouter",
+            "ollama",
+            "groq",
+            "deepseek",
+            "together",
+            "mistral",
+        ):
             assert provider in PROVIDER_PRESETS
 
     def test_default_provider_is_mimo(self):
@@ -42,6 +51,26 @@ class TestLLMConfigPresetResolution:
     def test_unknown_provider_falls_back_to_default(self):
         c = LLMConfig(provider="does-not-exist", api_key="x")
         assert "xiaomimimo.com" in c.base_url
+
+    def test_groq_preset(self):
+        c = LLMConfig(provider="groq", api_key="t")
+        assert "api.groq.com" in c.base_url
+        assert c.auth_style == "bearer"
+
+    def test_deepseek_preset(self):
+        c = LLMConfig(provider="deepseek", api_key="t")
+        assert "api.deepseek.com" in c.base_url
+        assert c.auth_style == "bearer"
+
+    def test_together_preset(self):
+        c = LLMConfig(provider="together", api_key="t")
+        assert "api.together.xyz" in c.base_url
+        assert c.auth_style == "bearer"
+
+    def test_mistral_preset(self):
+        c = LLMConfig(provider="mistral", api_key="t")
+        assert "api.mistral.ai" in c.base_url
+        assert c.auth_style == "bearer"
 
     def test_explicit_values_override_preset(self):
         c = LLMConfig(provider="openai", base_url="https://proxy.local/v1", model="custom")
