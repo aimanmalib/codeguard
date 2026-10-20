@@ -83,8 +83,11 @@ class LLMClient:
         payload = {
             "model": self.config.model,
             "messages": [{"role": m.role, "content": m.content} for m in messages],
-            "max_tokens": max_tokens or self.config.max_tokens,
-            "temperature": temperature or self.config.temperature,
+            "max_tokens": max_tokens if max_tokens is not None else self.config.max_tokens,
+            "temperature": temperature if temperature is not None else self.config.temperature,
+            # Explicit: some OpenAI-compatible servers stream when this is omitted,
+            # and this client parses a single JSON body.
+            "stream": False,
         }
 
         start = time.monotonic()
@@ -94,30 +97,39 @@ class LLMClient:
                 resp.raise_for_status()
                 data = resp.json()
                 break
-            except (httpx.HTTPStatusError, httpx.ConnectError):
-                if attempt < self.config.max_retries - 1:
+            except (httpx.HTTPStatusError, httpx.TransportError) as exc:
+                retryable = not isinstance(exc, httpx.HTTPStatusError) or _is_retryable_status(
+                    exc.response.status_code
+                )
+                if retryable and attempt < self.config.max_retries - 1:
                     await asyncio.sleep(self.config.retry_delay * (2**attempt))
                 else:
                     raise
 
         latency = (time.monotonic() - start) * 1000
         choice = data["choices"][0]
-        usage_data = data.get("usage", {})
+        message = choice.get("message") or {}
+        usage_data = data.get("usage") or {}
         usage = TokenUsage(
-            prompt_tokens=usage_data.get("prompt_tokens", 0),
-            completion_tokens=usage_data.get("completion_tokens", 0),
-            total_tokens=usage_data.get("total_tokens", 0),
-            cached_tokens=usage_data.get("prompt_tokens_details", {}).get("cached_tokens", 0),
+            prompt_tokens=usage_data.get("prompt_tokens") or 0,
+            completion_tokens=usage_data.get("completion_tokens") or 0,
+            total_tokens=usage_data.get("total_tokens") or 0,
+            cached_tokens=(usage_data.get("prompt_tokens_details") or {}).get("cached_tokens") or 0,
         )
         self.total_usage.add(usage)
 
         return ChatResponse(
-            content=choice.get("message", {}).get("content", ""),
-            reasoning_content=choice.get("message", {}).get("reasoning_content"),
+            content=message.get("content") or "",
+            reasoning_content=message.get("reasoning_content"),
             usage=usage,
             model=data.get("model", ""),
             latency_ms=latency,
         )
+
+
+def _is_retryable_status(status: int) -> bool:
+    """Retry rate limits and server errors; fail fast on other client errors."""
+    return status == 429 or status >= 500
 
 
 # Backward-compatible alias. New code should use LLMClient.
