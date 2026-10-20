@@ -12,7 +12,7 @@ git clone https://github.com/aimanmalib/codeguard.git
 cd codeguard
 python -m venv .venv && source .venv/bin/activate
 pip install -e ".[dev]"
-pytest          # 49 tests should pass
+pytest          # all tests should pass; no API key needed
 ```
 
 ## Development workflow
@@ -28,7 +28,7 @@ pytest          # 49 tests should pass
 4. Commit using [Conventional Commits](https://www.conventionalcommits.org/)
    (`feat:`, `fix:`, `docs:`, `test:`, `refactor:`, `ci:`).
 5. Open a pull request against `main`. CI runs lint + format + tests on
-   Python 3.10/3.11/3.12 — keep it green.
+   Python 3.10–3.13 — keep it green.
 
 ## Adding a new LLM provider
 
@@ -52,7 +52,8 @@ the OpenAI protocol.
 
 ## Good first issues
 
-- Add a provider preset (Together, Groq, DeepSeek, Mistral, ...)
+- Add a provider preset for another OpenAI-compatible service
+- Wire the parsed `review:` config options (severity threshold, agent toggles) into the pipeline
 - Add a new output format (SARIF, GitHub annotations)
 - Improve an agent's review prompt
 - Expand language detection in `cli._EXT_TO_LANG`

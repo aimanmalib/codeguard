@@ -6,7 +6,6 @@ import json
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 
 @dataclass
@@ -29,8 +28,8 @@ class AgentMetrics:
 class TokenTracker:
     def __init__(self, output_dir: str = "./output"):
         self._agents: dict[str, AgentMetrics] = {}
-        self._start: Optional[float] = None
-        self._end: Optional[float] = None
+        self._start: float | None = None
+        self._end: float | None = None
         self._output_dir = Path(output_dir)
         self._run_id = time.strftime("%Y%m%d_%H%M%S")
 
@@ -70,12 +69,13 @@ class TokenTracker:
         ]
         for name, m in sorted(self._agents.items(), key=lambda x: -x[1].total_tokens):
             lines.append(
-                f"  {name:<18} {m.call_count:>4} calls  {m.total_tokens:>8,} tok  {m.avg_latency_ms:>6.0f}ms"
+                f"  {name:<18} {m.call_count:>4} calls  "
+                f"{m.total_tokens:>8,} tok  {m.avg_latency_ms:>6.0f}ms"
             )
         lines.append("=" * 50)
         return "\n".join(lines)
 
-    def save(self, path: Optional[str] = None) -> Path:
+    def save(self, path: str | None = None) -> Path:
         out = Path(path) if path else self._output_dir / "metrics" / f"{self._run_id}.json"
         out.parent.mkdir(parents=True, exist_ok=True)
         data = {

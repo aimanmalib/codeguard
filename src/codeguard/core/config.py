@@ -2,8 +2,9 @@
 
 CodeGuard speaks the OpenAI-compatible ``/chat/completions`` protocol, so it
 works with any provider exposing that API: OpenAI, OpenRouter, Ollama, local
-llama.cpp servers, Xiaomi MiMo Token Plan, and more. Pick a provider via
-``LLMConfig(provider=...)`` or point ``base_url`` at any compatible endpoint.
+llama.cpp servers, Groq, DeepSeek, Together, Mistral, Xiaomi MiMo, and more.
+Pick a provider via ``LLMConfig(provider=...)`` or point ``base_url`` at any
+compatible endpoint. The default provider is ``openai``.
 """
 
 from __future__ import annotations
@@ -75,7 +76,7 @@ PROVIDER_PRESETS: dict[str, dict[str, str]] = {
     },
 }
 
-DEFAULT_PROVIDER = "mimo"
+DEFAULT_PROVIDER = "openai"
 
 
 class LLMConfig(BaseModel):
@@ -83,6 +84,8 @@ class LLMConfig(BaseModel):
 
     Empty ``api_key`` / ``base_url`` / ``model`` / ``auth_style`` fields are
     resolved from the selected provider preset (and its env vars) after init.
+    An unknown ``provider`` name falls back to the default (OpenAI-style bearer
+    auth), which lets you point ``base_url`` at any compatible endpoint.
     A low default temperature (0.3) is used for code-review accuracy.
     """
 
@@ -99,7 +102,7 @@ class LLMConfig(BaseModel):
     retry_delay: float = 1.0
 
     @model_validator(mode="after")
-    def _resolve_provider_defaults(self) -> "LLMConfig":
+    def _resolve_provider_defaults(self) -> LLMConfig:
         preset = PROVIDER_PRESETS.get(self.provider, PROVIDER_PRESETS[DEFAULT_PROVIDER])
         if not self.api_key:
             self.api_key = os.environ.get(preset["env_key"], "")
@@ -123,7 +126,7 @@ class LLMConfig(BaseModel):
 
 
 class MiMoConfig(LLMConfig):
-    """Backward-compatible alias defaulting to the Xiaomi MiMo Token Plan API.
+    """Backward-compatible alias defaulting to the Xiaomi MiMo preset.
 
     Retained so existing configs/tests keep working. New code should prefer
     :class:`LLMConfig` with an explicit ``provider``.
@@ -169,10 +172,10 @@ class CodeGuardConfig(BaseModel):
         return self.llm
 
     @classmethod
-    def from_yaml(cls, path: str) -> "CodeGuardConfig":
+    def from_yaml(cls, path: str) -> CodeGuardConfig:
         with open(path) as f:
             return cls(**yaml.safe_load(f) or {})
 
     @classmethod
-    def from_env(cls) -> "CodeGuardConfig":
+    def from_env(cls) -> CodeGuardConfig:
         return cls()

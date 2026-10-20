@@ -5,12 +5,11 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Optional
 
 from ..agents import get_agent
 from ..agents.base import AgentResult
 from ..core.config import CodeGuardConfig
-from ..core.mimo_client import MiMoClient
+from ..core.llm_client import LLMClient
 from ..core.token_tracker import TokenTracker
 
 logger = logging.getLogger(__name__)
@@ -19,9 +18,10 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ReviewResult:
     status: str = "success"
+    error: str | None = None
     code: str = ""
     agent_results: dict[str, AgentResult] = field(default_factory=dict)
-    summary_result: Optional[AgentResult] = None
+    summary_result: AgentResult | None = None
     total_tokens: int = 0
     duration_s: float = 0.0
 
@@ -53,7 +53,7 @@ class CodeGuardOrchestrator:
         result = ReviewResult(code=code)
         self.tracker.start()
 
-        async with MiMoClient(self.config.mimo) as client:
+        async with LLMClient(self.config.llm) as client:
             try:
                 # Phase 1: Run all review agents in parallel
                 logger.info("[CodeGuard] Phase 1: Running 6 review agents in parallel")
@@ -67,13 +67,21 @@ class CodeGuardOrchestrator:
 
                 results = await asyncio.gather(*tasks, return_exceptions=True)
 
-                for agent_name, res in zip(self.REVIEW_AGENTS, results):
+                for agent_name, res in zip(self.REVIEW_AGENTS, results, strict=True):
                     if isinstance(res, Exception):
                         result.agent_results[agent_name] = AgentResult(
                             agent_name=agent_name, status="failed", error=str(res)
                         )
                     else:
                         result.agent_results[agent_name] = res
+
+                failed = [r for r in result.agent_results.values() if not r.ok]
+                if len(failed) == len(self.REVIEW_AGENTS):
+                    # Nothing to summarize; don't spend another LLM call.
+                    result.status = "failed"
+                    result.error = f"all review agents failed (first error: {failed[0].error})"
+                    logger.error(f"[CodeGuard] {result.error}")
+                    return self._finish(result)
 
                 # Phase 2: Aggregate and summarize
                 logger.info("[CodeGuard] Phase 2: Generating summary")
@@ -91,7 +99,11 @@ class CodeGuardOrchestrator:
             except Exception as e:
                 logger.error(f"[CodeGuard] Fatal: {e}")
                 result.status = "failed"
+                result.error = str(e)
 
+        return self._finish(result)
+
+    def _finish(self, result: ReviewResult) -> ReviewResult:
         self.tracker.end()
         result.total_tokens = self.tracker.total_tokens
         result.duration_s = self.tracker.duration_s

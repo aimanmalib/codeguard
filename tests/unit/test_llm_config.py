@@ -27,8 +27,15 @@ class TestProviderPresets:
         ):
             assert provider in PROVIDER_PRESETS
 
-    def test_default_provider_is_mimo(self):
-        assert DEFAULT_PROVIDER == "mimo"
+    def test_default_provider_is_openai(self):
+        assert DEFAULT_PROVIDER == "openai"
+
+    def test_default_config_uses_openai(self, monkeypatch):
+        monkeypatch.setenv("OPENAI_API_KEY", "sk-default")
+        c = CodeGuardConfig()
+        assert c.llm.provider == "openai"
+        assert c.llm.base_url == "https://api.openai.com/v1"
+        assert c.llm.headers["Authorization"] == "Bearer sk-default"
 
 
 class TestLLMConfigPresetResolution:
@@ -50,7 +57,15 @@ class TestLLMConfigPresetResolution:
 
     def test_unknown_provider_falls_back_to_default(self):
         c = LLMConfig(provider="does-not-exist", api_key="x")
-        assert "xiaomimimo.com" in c.base_url
+        assert c.base_url == "https://api.openai.com/v1"
+        assert c.auth_style == "bearer"
+
+    def test_custom_endpoint_via_unknown_provider(self):
+        c = LLMConfig(
+            provider="custom", base_url="http://localhost:8080/v1", model="m", api_key="k"
+        )
+        assert c.base_url == "http://localhost:8080/v1"
+        assert c.headers["Authorization"] == "Bearer k"
 
     def test_groq_preset(self):
         c = LLMConfig(provider="groq", api_key="t")
@@ -133,3 +148,9 @@ class TestMiMoBackwardCompat:
         c = CodeGuardConfig(**{"llm": {"provider": "openai", "api_key": "sk-x"}})
         assert c.llm.provider == "openai"
         assert c.llm.auth_style == "bearer"
+
+    def test_mimo_client_shim_reexports_llm_client(self):
+        from codeguard.core import llm_client, mimo_client
+
+        assert mimo_client.MiMoClient is llm_client.LLMClient
+        assert mimo_client.ChatMessage is llm_client.ChatMessage

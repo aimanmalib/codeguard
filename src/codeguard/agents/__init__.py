@@ -1,13 +1,13 @@
 """CodeGuard Agents - 7 specialized AI agents for code review."""
 
-from .base import BaseAgent, AgentResult
+from .base import AgentResult, BaseAgent
+from .complexity import ComplexityAgent
+from .documentation import DocumentationAgent
+from .logic import LogicAgent
 from .security import SecurityAgent
 from .style import StyleAgent
-from .complexity import ComplexityAgent
-from .logic import LogicAgent
-from .testing import TestingAgent
-from .documentation import DocumentationAgent
 from .summary import SummaryAgent
+from .testing import TestingAgent
 
 AGENT_REGISTRY: dict[str, type[BaseAgent]] = {
     "security": SecurityAgent,

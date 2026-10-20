@@ -6,10 +6,10 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from ..core.config import CodeGuardConfig
-from ..core.mimo_client import ChatMessage, ChatResponse, MiMoClient
+from ..core.llm_client import ChatMessage, ChatResponse, LLMClient
 from ..core.token_tracker import TokenTracker
 
 logger = logging.getLogger(__name__)
@@ -23,8 +23,8 @@ class AgentResult:
     summary: str = ""
     tokens_used: int = 0
     latency_ms: float = 0.0
-    error: Optional[str] = None
-    reasoning: Optional[str] = None
+    error: str | None = None
+    reasoning: str | None = None
 
     @property
     def ok(self) -> bool:
@@ -51,12 +51,12 @@ class BaseAgent(ABC):
     name: str = "base"
     description: str = "Base agent"
 
-    def __init__(self, config: CodeGuardConfig, client: MiMoClient, tracker: TokenTracker):
+    def __init__(self, config: CodeGuardConfig, client: LLMClient, tracker: TokenTracker):
         self.config = config
         self.client = client
         self.tracker = tracker
 
-    async def _call_mimo(self, prompt: str, system: str = "") -> ChatResponse:
+    async def _call_llm(self, prompt: str, system: str = "") -> ChatResponse:
         messages = []
         if system:
             messages.append(ChatMessage(role="system", content=system))
@@ -72,6 +72,9 @@ class BaseAgent(ABC):
             latency = (time.monotonic() - start) * 1000
             self.tracker.record(self.name, 0, latency, errors=1)
             raise
+
+    # Backward-compatible name from when CodeGuard only targeted MiMo.
+    _call_mimo = _call_llm
 
     @abstractmethod
     async def execute(self, code: str, language: str = "", context: str = "") -> AgentResult: ...

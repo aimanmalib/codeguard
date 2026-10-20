@@ -37,7 +37,7 @@ body:
     id: version
     attributes:
       label: CodeGuard version
-      description: Output of `pip show mimo-codeguard` (Version field) or commit SHA.
+      description: Output of `pip show codeguard-llm` (Version field) or commit SHA.
       placeholder: 1.0.0
     validations:
       required: true
