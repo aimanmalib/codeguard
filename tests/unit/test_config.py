@@ -9,7 +9,7 @@ class TestMiMoConfig:
         assert c.model == "mimo-v2.5-pro"
 
     def test_api_key_header_not_bearer(self):
-        """MiMo Token Plan uses api-key header, NOT Authorization: Bearer."""
+        """The MiMo preset uses an api-key header, NOT Authorization: Bearer."""
         c = MiMoConfig(api_key="my-key")
         assert "api-key" in c.headers
         assert "Authorization" not in c.headers
@@ -34,9 +34,9 @@ class TestReviewConfig:
 
 class TestCodeGuardConfig:
     def test_from_env(self, monkeypatch):
-        monkeypatch.setenv("MIMO_API_KEY", "env-key")
+        monkeypatch.setenv("OPENAI_API_KEY", "env-key")
         c = CodeGuardConfig.from_env()
-        assert c.mimo.api_key == "env-key"
+        assert c.llm.api_key == "env-key"
 
     def test_output_format_default(self):
         c = CodeGuardConfig()

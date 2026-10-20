@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from ..agents import get_agent
 from ..agents.base import AgentResult
 from ..core.config import CodeGuardConfig
-from ..core.mimo_client import MiMoClient
+from ..core.llm_client import LLMClient
 from ..core.token_tracker import TokenTracker
 
 logger = logging.getLogger(__name__)
@@ -52,7 +52,7 @@ class CodeGuardOrchestrator:
         result = ReviewResult(code=code)
         self.tracker.start()
 
-        async with MiMoClient(self.config.mimo) as client:
+        async with LLMClient(self.config.llm) as client:
             try:
                 # Phase 1: Run all review agents in parallel
                 logger.info("[CodeGuard] Phase 1: Running 6 review agents in parallel")

@@ -6,7 +6,7 @@ import pytest
 
 from codeguard.agents import AGENT_REGISTRY, get_agent
 from codeguard.agents.base import AgentResult, BaseAgent
-from codeguard.core.mimo_client import ChatResponse, TokenUsage
+from codeguard.core.llm_client import ChatResponse, TokenUsage
 
 
 def make_response(content='{"findings": []}', tokens=500):
@@ -15,7 +15,7 @@ def make_response(content='{"findings": []}', tokens=500):
         usage=TokenUsage(
             prompt_tokens=tokens // 2, completion_tokens=tokens // 2, total_tokens=tokens
         ),
-        model="mimo-v2.5-pro",
+        model="test-model",
         latency_ms=100,
     )
 
@@ -37,10 +37,10 @@ class TestAgentRegistry:
         assert set(AGENT_REGISTRY.keys()) == expected
 
     def test_get_valid(self, config):
-        from codeguard.core.mimo_client import MiMoClient
+        from codeguard.core.llm_client import LLMClient
         from codeguard.core.token_tracker import TokenTracker
 
-        client = AsyncMock(spec=MiMoClient)
+        client = AsyncMock(spec=LLMClient)
         tracker = TokenTracker()
         for name in AGENT_REGISTRY:
             agent = get_agent(name, config=config, client=client, tracker=tracker)
@@ -79,10 +79,10 @@ class TestAgentResult:
 class TestIndividualAgents:
     @pytest.fixture
     def agent_setup(self, config):
-        from codeguard.core.mimo_client import MiMoClient
+        from codeguard.core.llm_client import LLMClient
         from codeguard.core.token_tracker import TokenTracker
 
-        client = AsyncMock(spec=MiMoClient)
+        client = AsyncMock(spec=LLMClient)
         tracker = TokenTracker()
         return config, client, tracker
 

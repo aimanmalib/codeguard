@@ -2,9 +2,9 @@
 
 import pytest
 
-from codeguard.core.config import CodeGuardConfig, MiMoConfig
+from codeguard.core.config import CodeGuardConfig, LLMConfig
 
 
 @pytest.fixture
 def config():
-    return CodeGuardConfig(mimo=MiMoConfig(api_key="test-key"))
+    return CodeGuardConfig(llm=LLMConfig(provider="openai", api_key="test-key"))
