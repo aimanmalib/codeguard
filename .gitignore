@@ -10,3 +10,4 @@ output/
 .mypy_cache/
 .pytest_cache/
 .env
+uv.lock
