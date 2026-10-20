@@ -99,7 +99,7 @@ class LLMConfig(BaseModel):
     retry_delay: float = 1.0
 
     @model_validator(mode="after")
-    def _resolve_provider_defaults(self) -> "LLMConfig":
+    def _resolve_provider_defaults(self) -> LLMConfig:
         preset = PROVIDER_PRESETS.get(self.provider, PROVIDER_PRESETS[DEFAULT_PROVIDER])
         if not self.api_key:
             self.api_key = os.environ.get(preset["env_key"], "")
@@ -169,10 +169,10 @@ class CodeGuardConfig(BaseModel):
         return self.llm
 
     @classmethod
-    def from_yaml(cls, path: str) -> "CodeGuardConfig":
+    def from_yaml(cls, path: str) -> CodeGuardConfig:
         with open(path) as f:
             return cls(**yaml.safe_load(f) or {})
 
     @classmethod
-    def from_env(cls) -> "CodeGuardConfig":
+    def from_env(cls) -> CodeGuardConfig:
         return cls()

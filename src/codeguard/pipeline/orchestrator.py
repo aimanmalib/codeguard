@@ -5,7 +5,6 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import dataclass, field
-from typing import Optional
 
 from ..agents import get_agent
 from ..agents.base import AgentResult
@@ -21,7 +20,7 @@ class ReviewResult:
     status: str = "success"
     code: str = ""
     agent_results: dict[str, AgentResult] = field(default_factory=dict)
-    summary_result: Optional[AgentResult] = None
+    summary_result: AgentResult | None = None
     total_tokens: int = 0
     duration_s: float = 0.0
 
@@ -67,7 +66,7 @@ class CodeGuardOrchestrator:
 
                 results = await asyncio.gather(*tasks, return_exceptions=True)
 
-                for agent_name, res in zip(self.REVIEW_AGENTS, results):
+                for agent_name, res in zip(self.REVIEW_AGENTS, results, strict=True):
                     if isinstance(res, Exception):
                         result.agent_results[agent_name] = AgentResult(
                             agent_name=agent_name, status="failed", error=str(res)

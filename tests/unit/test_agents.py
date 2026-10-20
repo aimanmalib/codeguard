@@ -1,10 +1,11 @@
 """Unit tests for CodeGuard agents."""
 
-import pytest
 from unittest.mock import AsyncMock
 
+import pytest
+
 from codeguard.agents import AGENT_REGISTRY, get_agent
-from codeguard.agents.base import BaseAgent, AgentResult
+from codeguard.agents.base import AgentResult, BaseAgent
 from codeguard.core.mimo_client import ChatResponse, TokenUsage
 
 

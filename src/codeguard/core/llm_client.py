@@ -11,7 +11,6 @@ import asyncio
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Optional
 
 import httpx
 
@@ -27,7 +26,7 @@ class TokenUsage:
     total_tokens: int = 0
     cached_tokens: int = 0
 
-    def add(self, other: "TokenUsage") -> None:
+    def add(self, other: TokenUsage) -> None:
         self.prompt_tokens += other.prompt_tokens
         self.completion_tokens += other.completion_tokens
         self.total_tokens += other.total_tokens
@@ -43,7 +42,7 @@ class ChatMessage:
 @dataclass
 class ChatResponse:
     content: str
-    reasoning_content: Optional[str] = None
+    reasoning_content: str | None = None
     usage: TokenUsage = field(default_factory=TokenUsage)
     model: str = ""
     latency_ms: float = 0.0
@@ -59,10 +58,10 @@ class LLMClient:
 
     def __init__(self, config: LLMConfig):
         self.config = config
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
         self.total_usage = TokenUsage()
 
-    async def __aenter__(self) -> "LLMClient":
+    async def __aenter__(self) -> LLMClient:
         self._client = httpx.AsyncClient(
             base_url=self.config.base_url,
             headers=self.config.headers,
@@ -78,8 +77,8 @@ class LLMClient:
         self,
         messages: list[ChatMessage],
         *,
-        temperature: Optional[float] = None,
-        max_tokens: Optional[int] = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
     ) -> ChatResponse:
         payload = {
             "model": self.config.model,

@@ -1,6 +1,7 @@
 """Shared fixtures."""
 
 import pytest
+
 from codeguard.core.config import CodeGuardConfig, MiMoConfig
 
 

@@ -1,6 +1,6 @@
 """Unit tests for token tracking."""
 
-from codeguard.core.token_tracker import TokenTracker, AgentMetrics
+from codeguard.core.token_tracker import AgentMetrics, TokenTracker
 
 
 class TestTokenTracker:

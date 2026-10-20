@@ -6,7 +6,7 @@ import logging
 import time
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any
 
 from ..core.config import CodeGuardConfig
 from ..core.mimo_client import ChatMessage, ChatResponse, MiMoClient
@@ -23,8 +23,8 @@ class AgentResult:
     summary: str = ""
     tokens_used: int = 0
     latency_ms: float = 0.0
-    error: Optional[str] = None
-    reasoning: Optional[str] = None
+    error: str | None = None
+    reasoning: str | None = None
 
     @property
     def ok(self) -> bool:

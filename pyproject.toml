@@ -54,3 +54,8 @@ markers = ["unit", "integration", "slow"]
 [tool.ruff]
 target-version = "py310"
 line-length = 100
+
+[tool.ruff.lint]
+# Explicit rule set so new ruff releases (which widen the default set) don't
+# break CI unexpectedly.
+select = ["E", "F", "I", "UP", "B"]

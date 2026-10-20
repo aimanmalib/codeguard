@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from .base import BaseAgent, AgentResult
+from .base import AgentResult, BaseAgent
 
 
 class SecurityAgent(BaseAgent):
