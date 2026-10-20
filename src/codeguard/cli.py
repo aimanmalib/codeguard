@@ -9,6 +9,7 @@ from pathlib import Path
 
 import click
 from rich.console import Console
+from rich.markdown import Markdown
 from rich.panel import Panel
 from rich.table import Table
 
@@ -17,6 +18,8 @@ from .core.config import CodeGuardConfig
 from .pipeline.orchestrator import CodeGuardOrchestrator
 
 console = Console()
+# Status/diagnostics go to stderr so `--format json` on stdout stays parseable.
+err_console = Console(stderr=True)
 
 # Map file extensions to language names for the review prompt.
 _EXT_TO_LANG = {
@@ -57,11 +60,12 @@ def main(ctx, config, verbose):
     """CodeGuard - 7-Agent Code Review Automation.
 
     Provider-agnostic: runs on any OpenAI-compatible LLM endpoint
-    (OpenAI, OpenRouter, Ollama, MiMo, ...).
+    (OpenAI, OpenRouter, Ollama, Groq, ...). Defaults to OpenAI; set
+    OPENAI_API_KEY, or pick a provider in a YAML file passed with --config.
     """
     import logging
 
-    logging.basicConfig(level=logging.DEBUG if verbose else logging.INFO)
+    logging.basicConfig(level=logging.DEBUG if verbose else logging.WARNING)
     ctx.ensure_object(dict)
     ctx.obj["config"] = CodeGuardConfig.from_yaml(config) if config else CodeGuardConfig.from_env()
 
@@ -91,11 +95,14 @@ def review(ctx, path, language, fmt, output):
                 if "node_modules" not in str(f) and ".git" not in str(f):
                     parts.append(f"# File: {f.relative_to(target)}\n{f.read_text()}")
         code = "\n\n".join(parts)
+        if not code.strip():
+            err_console.print(f"[red]No supported source files found under {path}[/]")
+            sys.exit(1)
     else:
-        console.print(f"[red]Path not found: {path}[/]")
+        err_console.print(f"[red]Path not found: {path}[/]")
         sys.exit(1)
 
-    console.print(
+    err_console.print(
         Panel(
             f"[bold cyan]CodeGuard v{__version__}[/]\n"
             f"Target: {path} | Language: {language or 'auto'} | Format: {fmt}",
@@ -108,7 +115,7 @@ def review(ctx, path, language, fmt, output):
     if result.ok:
         _display_results(result, fmt, output)
     else:
-        console.print("[red]Review failed[/]")
+        err_console.print(f"[red]Review failed: {result.error or 'unknown error'}[/]")
         sys.exit(1)
 
 
@@ -130,33 +137,65 @@ async def _run_review(config, code, language):
     return await orchestrator.review(code, language)
 
 
+def _report_dict(result) -> dict:
+    """Machine-readable report: per-agent output/status plus the final summary."""
+    summary = result.summary_result
+    return {
+        "total_tokens": result.total_tokens,
+        "duration_s": round(result.duration_s, 2),
+        "agents": {
+            name: {
+                "status": r.status,
+                "summary": r.summary,
+                "tokens": r.tokens_used,
+                "error": r.error,
+            }
+            for name, r in result.agent_results.items()
+        },
+        "summary": (
+            {"status": summary.status, "report": summary.summary, "error": summary.error}
+            if summary
+            else None
+        ),
+    }
+
+
+def _report_markdown(result) -> str:
+    """Human-readable Markdown report."""
+    lines = ["# CodeGuard review", ""]
+    summary = result.summary_result
+    if summary and summary.ok:
+        lines += ["## Summary", "", summary.summary.strip(), ""]
+    elif summary:
+        lines += ["## Summary", "", f"_Summary agent failed: {summary.error}_", ""]
+    for name, r in result.agent_results.items():
+        lines += [f"## {name.capitalize()}", ""]
+        lines.append(r.summary.strip() if r.ok else f"_Agent failed: {r.error}_")
+        lines.append("")
+    lines.append(
+        f"_Tokens: {result.total_tokens:,} · Duration: {result.duration_s:.1f}s · "
+        f"Agents: {len(result.agent_results) + (1 if summary else 0)}_"
+    )
+    return "\n".join(lines) + "\n"
+
+
 def _display_results(result, fmt, output):
     if fmt == "json":
-        data = {
-            "total_tokens": result.total_tokens,
-            "duration_s": result.duration_s,
-            "agents": {
-                name: {"summary": r.summary, "tokens": r.tokens_used}
-                for name, r in result.agent_results.items()
-            },
-        }
-        text = json.dumps(data, indent=2)
-        if output:
-            Path(output).write_text(text)
-        else:
-            console.print(text)
+        text = json.dumps(_report_dict(result), indent=2)
     else:
-        console.print()
-        console.print(
-            Panel(
-                f"[bold green]Review Complete![/]\n\n"
-                f"Tokens: {result.total_tokens:,}\n"
-                f"Duration: {result.duration_s:.1f}s\n"
-                f"Agents: {len(result.agent_results)}",
-                title="Results",
-                border_style="green",
-            )
-        )
+        text = _report_markdown(result)
+
+    if output:
+        Path(output).write_text(text)
+        err_console.print(f"[green]Report written to {output}[/]")
+    elif fmt == "text":
+        console.print(Markdown(text))
+    else:
+        click.echo(text)
+
+    failed = [name for name, r in result.agent_results.items() if not r.ok]
+    if failed:
+        err_console.print(f"[yellow]Warning: {len(failed)} agent(s) failed: {', '.join(failed)}[/]")
 
 
 if __name__ == "__main__":

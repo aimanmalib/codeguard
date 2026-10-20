@@ -18,6 +18,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ReviewResult:
     status: str = "success"
+    error: str | None = None
     code: str = ""
     agent_results: dict[str, AgentResult] = field(default_factory=dict)
     summary_result: AgentResult | None = None
@@ -74,6 +75,14 @@ class CodeGuardOrchestrator:
                     else:
                         result.agent_results[agent_name] = res
 
+                failed = [r for r in result.agent_results.values() if not r.ok]
+                if len(failed) == len(self.REVIEW_AGENTS):
+                    # Nothing to summarize; don't spend another LLM call.
+                    result.status = "failed"
+                    result.error = f"all review agents failed (first error: {failed[0].error})"
+                    logger.error(f"[CodeGuard] {result.error}")
+                    return self._finish(result)
+
                 # Phase 2: Aggregate and summarize
                 logger.info("[CodeGuard] Phase 2: Generating summary")
 
@@ -90,7 +99,11 @@ class CodeGuardOrchestrator:
             except Exception as e:
                 logger.error(f"[CodeGuard] Fatal: {e}")
                 result.status = "failed"
+                result.error = str(e)
 
+        return self._finish(result)
+
+    def _finish(self, result: ReviewResult) -> ReviewResult:
         self.tracker.end()
         result.total_tokens = self.tracker.total_tokens
         result.duration_s = self.tracker.duration_s
