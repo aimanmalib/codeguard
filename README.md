@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **codeguard has moved into [crewforge](https://github.com/aimanmalib/crewforge).** It now lives on as `crewforge review`, on a shared core
+> that fails loudly instead of reporting success on empty output. This repository is archived and kept for history;
+> new issues and changes go to crewforge.
+
 # CodeGuard
 
 > **Multi-agent code review for any OpenAI-compatible LLM**
